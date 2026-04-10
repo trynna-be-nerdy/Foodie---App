@@ -2,78 +2,103 @@
 
 > **One app. All your restaurant points. Your whole food community.**
 
-Foodie is a mobile application that centralizes restaurant loyalty points, gamifies food exploration, and connects users with local dining establishments and food communities.
+Foodie was developed as part of the **[Diamond Challenge](https://diamondchallenge.org/competition/)** — a national business competition for high school entrepreneurs. Development was managed using **Task Master AI** to coordinate LLM-assisted workflows, enforce task dependencies, and maintain agile sprint cadence across the build.
 
 ---
 
-## The Problem
+## What Is Foodie
 
-Foodies juggle multiple loyalty apps, miss out on local gems, and have no dedicated space to engage with their food community. Foodie solves all three.
+Foodie is a mobile application that solves a real gap in the food-tech space: there is no single platform that consolidates restaurant loyalty points, surfaces local dining options, and builds community around food culture.
 
----
+The app lets users aggregate all their restaurant rewards into one dashboard, scan receipts or barcodes to log points instantly, discover local and small-scale food establishments through a personalized feed, earn gamified Foodie Points for trying new cuisines and completing food challenges, participate in community food drives and local/national events, and purchase restaurant-specific loyalty points directly in-app.
 
-## Core Features
-
-**Points Hub**
-Aggregate all your restaurant loyalty points into a single dashboard. Scan receipts or barcodes at the counter to instantly log points — no more logging into 10 different apps.
-
-**Explore & Discover**
-An interactive map shows nearby restaurants, their points value, and your current balance with each — so you always know where your points go furthest.
-
-**Gamified Rewards**
-Earn Foodie Points for trying new restaurants, ordering different dishes, and completing food challenges. Restaurants can spotlight new or underperforming menu items through challenge-based incentives. Points redeem as gift cards, and Foodie earns a cut on orders placed through the platform.
-
-**For You Page**
-Algorithm-driven discovery feed highlighting local and small-scale food establishments — caterers, pop-ups, part-time vendors — who typically rely on word of mouth.
-
-**Social & Community**
-Post food content and earn through views or brand promotions. Follow local food events, competitions (local and national), and participate in community food drives and pantry donations — which also earn you points.
-
-**Payments**
-Buy restaurant-specific loyalty points directly in-app and manage all reward redemptions from one place.
+Small vendors, caterers, and pop-ups — who normally rely on word of mouth — also get a storefront and discovery presence inside the app.
 
 ---
 
-## Why Foodie
+## Demo
 
-| Gap in Market | Foodie's Answer |
-|---|---|
-| Points scattered across many apps | Unified loyalty dashboard |
-| Social media is too broad | Niche feed for food lovers |
-| Local restaurants lack digital reach | Built-in local discovery & promotion |
-| No gamification for food exploration | Challenge-based points system |
-| Small vendors invisible online | Dedicated storefront & discovery tools |
+### UI Walkthrough
+
+https://github.com/YOUR_USERNAME/foodie/raw/main/assets/foodie-demo.mp4
+
+> **Note:** To embed this video on GitHub, drag `assets/foodie-demo.mp4` into any GitHub Issue comment box to get a permanent CDN link, then paste that link here in place of the raw path above.
+
+### Pitch Video
+
+[![Foodie Pitch – Diamond Challenge](https://img.youtube.com/vi/UnZsEsHHn48/maxresdefault.jpg)](https://www.youtube.com/watch?v=UnZsEsHHn48)
 
 ---
 
-## Revenue Model
+## Technical Overview
 
-- **Transaction cut** on orders placed through the app
-- **Promoted content** from restaurants and food brands
-- **Points purchases** — users buy loyalty points for specific restaurants in-app
-- **Event hosting fees** for food competitions and community events
+### Architecture
+
+Foodie follows a **client–server architecture** with a React Native mobile client communicating with a RESTful Node.js API backed by a PostgreSQL database. The backend is stateless and horizontally scalable, with JWT-based authentication and OAuth2 for social login.
+
+```
+┌──────────────────────┐        ┌──────────────────────────┐
+│   React Native App   │◄──────►│  Node.js / Express API   │
+│  (iOS + Android)     │  HTTPS │  (REST + Auth + Events)  │
+└──────────────────────┘        └────────────┬─────────────┘
+                                             │
+                       ┌─────────────────────┼──────────────────────┐
+                       ▼                     ▼                      ▼
+               PostgreSQL DB          AWS S3 Storage        Google Vision API
+               (Users, Points,        (Receipts,            (OCR / Barcode
+                Restaurants)           Media)                Scanning)
+```
+
+### Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Mobile Frontend | React Native | Cross-platform iOS & Android |
+| Backend API | Node.js + Express | REST API, business logic |
+| Database | PostgreSQL | Relational data — users, points, restaurants |
+| Authentication | JWT + OAuth2 | Secure login, Google & Apple sign-in |
+| OCR / Scanning | Google Vision API | Receipt and barcode point logging |
+| Maps | Google Maps API / Mapbox | Restaurant discovery map |
+| Storage | AWS S3 | Receipt images, food media uploads |
+| Hosting | AWS / Railway | API deployment |
+| Task Management | Task Master AI | Agile workflow, LLM coordination |
+| Version Control | Git + GitHub | Source control and collaboration |
+
+### Key Technical Challenges
+
+**Points Aggregation**
+Each restaurant chain has a different loyalty structure. The aggregation layer normalizes these into a unified point schema with restaurant-specific metadata, so users see a consistent interface regardless of the underlying program.
+
+**OCR Receipt Scanning**
+Google Vision API processes receipt images to extract restaurant name, date, and total spend. A custom parsing layer maps extracted fields to the correct loyalty program and calculates the applicable points.
+
+**Gamification Engine**
+Foodie Points run on a separate challenge-based system independent of restaurant loyalty points. Rules are configurable per restaurant — allowing businesses to weight specific menu items, target underperforming dishes, or create time-limited challenges. Point accumulation is tracked in PostgreSQL and redeemable as gift cards.
+
+**For You Page Algorithm**
+The discovery feed uses a scoring model that weighs proximity, user order history, points balance, and local establishment status to surface relevant restaurants — with priority given to small/independent vendors.
 
 ---
 
 ## Project Milestones
 
 ### Phase 1 — Foundation *(Q1–Q2 2025)*
-- [ ] Market research & competitor analysis
-- [ ] Core app architecture design (React Native + Node.js + PostgreSQL)
-- [ ] User authentication & profile system
-- [ ] Basic points aggregation (manual entry)
+- [x] Market research & competitor analysis
+- [x] Core app architecture design
+- [x] User authentication & profile system
+- [x] Basic points aggregation (manual entry)
 
 ### Phase 2 — Core Features *(Q3 2025)*
-- [ ] Receipt & barcode scanning (OCR integration)
-- [ ] Interactive map with restaurant discovery
-- [ ] For You Page feed algorithm (v1)
+- [x] Receipt & barcode scanning (OCR integration)
+- [x] Interactive map with restaurant discovery
+- [x] For You Page feed (v1)
 - [ ] Restaurant onboarding portal
 
 ### Phase 3 — Gamification & Social *(Q4 2025)*
 - [ ] Foodie Points challenge system
 - [ ] Social feed — post, view, earn
 - [ ] Community events & food drive integration
-- [ ] Gift card redemption system
+- [ ] Gift card redemption
 
 ### Phase 4 — Monetization & Scale *(Q1–Q2 2026)*
 - [ ] In-app points purchasing & payments
@@ -81,92 +106,38 @@ Buy restaurant-specific loyalty points directly in-app and manage all reward red
 - [ ] National event hosting infrastructure
 - [ ] Vendor/caterer storefronts
 
-### Phase 5 — Growth *(Q3 2026+)*
-- [ ] Partnerships with major restaurant chains
-- [ ] Expanded non-profit / food pantry integrations
-- [ ] Analytics dashboard for restaurant partners
-- [ ] Regional expansion
-
 ---
 
 ## Agile Development Process
 
-Foodie is built using **2-week sprint cycles** with the following workflow:
+Foodie is built on **2-week sprint cycles** using Task Master AI to manage task generation, dependency tracking, and LLM-assisted implementation — keeping AI contributions structured and on-scope throughout development.
 
 ```
 Plan → Design → Build → Test → Review → Deploy
 ```
 
-**Sprint Structure**
-- Sprint planning every other Monday — stories sized in points, pulled from the backlog
-- Daily standups (async via Slack) — what's done, what's next, any blockers
-- Mid-sprint check-in on Wednesday of week 2
-- Sprint review + retrospective at the end of each cycle
+**Workflow**
+- Sprint planning every other Monday — stories pulled from the Task Master backlog
+- Async daily standups — blockers surfaced and resolved same day
+- Sprint review + retro at the end of each cycle to refine the next iteration
 
-**Task Management**
-Tasks are tracked using [Task Master AI](https://github.com/eyaltoledano/claude-task-master), organized into epics aligned with the phase milestones above. Each task has a clear definition of done, test strategy, and dependency chain before work begins.
+**Task Master AI Integration**
+Task Master generates tasks from the PRD, breaks them into subtasks with explicit dependencies, and tracks implementation notes per subtask. This prevents LLM drift, enforces a clear order of operations, and makes the development history auditable.
 
-**Git Workflow**
+**Git Strategy**
 ```
 main → develop → feature/[task-id]-short-description
 ```
-- PRs require one peer review before merging to `develop`
-- `develop` is merged to `main` at the end of each sprint
+- PRs require peer review before merging to `develop`
+- `develop` merges to `main` at sprint close
 - Commit messages reference task IDs: `feat: add barcode scanner (task 2.3)`
 
 ---
 
-## Tech Stack
+## About This Project
 
-| Layer | Technology |
-|---|---|
-| Mobile (Frontend) | React Native (iOS + Android) |
-| Backend API | Node.js + Express |
-| Database | PostgreSQL |
-| Auth | JWT + OAuth2 (Google, Apple) |
-| Maps | Google Maps API / Mapbox |
-| OCR / Scanning | Google Vision API or similar |
-| Storage | AWS S3 (images, receipts) |
-| Hosting | AWS / Railway |
-| Task Management | Task Master AI |
-| Version Control | Git + GitHub |
+Foodie was built for the **[Diamond Challenge](https://diamondchallenge.org/competition/)**, a national entrepreneurship competition. The goal was to identify a real, underserved problem, build a working prototype, and present a compelling business case — covering the problem, customer, solution, differentiation, and economics.
 
 ---
 
-## Getting Started
-
-```bash
-# Clone the repo
-git clone https://github.com/your-org/foodie.git
-cd foodie
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-
-# Run the development server
-npm run dev
-```
-
-See `/docs/setup.md` for full environment configuration.
-
----
-
-## Contributing
-
-1. Check the task board for open issues tagged `good first issue`
-2. Create a feature branch from `develop`
-3. Submit a PR with a clear description and linked task ID
-4. Await review — we aim to review within 48 hours
-
----
-
-## License
-
-MIT License — see `LICENSE` for details.
-
----
-
-*Built with ❤️ for the food community.*
+*Built for foodies, by foodies.*
