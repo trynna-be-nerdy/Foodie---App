@@ -80,34 +80,6 @@ The discovery feed uses a scoring model that weighs proximity, user order histor
 
 ---
 
-## Project Milestones
-
-### Phase 1 — Foundation *(Q1–Q2 2025)*
-- [x] Market research & competitor analysis
-- [x] Core app architecture design
-- [x] User authentication & profile system
-- [x] Basic points aggregation (manual entry)
-
-### Phase 2 — Core Features *(Q3 2025)*
-- [x] Receipt & barcode scanning (OCR integration)
-- [x] Interactive map with restaurant discovery
-- [x] For You Page feed (v1)
-- [ ] Restaurant onboarding portal
-
-### Phase 3 — Gamification & Social *(Q4 2025)*
-- [ ] Foodie Points challenge system
-- [ ] Social feed — post, view, earn
-- [ ] Community events & food drive integration
-- [ ] Gift card redemption
-
-### Phase 4 — Monetization & Scale *(Q1–Q2 2026)*
-- [ ] In-app points purchasing & payments
-- [ ] Restaurant promotional tools
-- [ ] National event hosting infrastructure
-- [ ] Vendor/caterer storefronts
-
----
-
 ## Agile Development Process
 
 Foodie is built on **2-week sprint cycles** using Task Master AI to manage task generation, dependency tracking, and LLM-assisted implementation — keeping AI contributions structured and on-scope throughout development.
