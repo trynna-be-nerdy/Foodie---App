@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__task-master-ai__get_tasks",
+      "mcp__task-master-ai__get_task",
+      "mcp__task-master-ai__next_task",
+      "mcp__task-master-ai__set_task_status",
+      "mcp__task-master-ai__update_subtask",
+      "mcp__task-master-ai__parse_prd",
+      "mcp__task-master-ai__expand_task",
+      "mcp__task-master-ai__initialize_project",
+      "mcp__task-master-ai__analyze_project_complexity",
+      "mcp__task-master-ai__expand_all",
+      "mcp__task-master-ai__add_subtask",
+      "mcp__task-master-ai__remove_task",
+      "mcp__task-master-ai__add_task",
+      "mcp__task-master-ai__complexity_report",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npx task-master-ai:*)",
+      "Skill(tm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx ts-node:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx expo install:*)",
+      "Bash(ls:*)",
+      "Bash(npx expo start)",
+      "Bash(npx expo start --port 8082)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run tsc:*)",
+      "Bash(node node_modules/typescript/bin/tsc:*)",
+      "Bash(node ./node_modules/typescript/lib/tsc.js:*)",
+      "Bash(npx expo start --port 8083)",
+      "Bash(npx expo start --port 8084 --clear)",
+      "Bash(npm run lint)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "task-master-ai"
+  ]
+}

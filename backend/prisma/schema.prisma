@@ -1,0 +1,689 @@
+// Prisma schema for Foodie application
+// Documentation: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  phone        String?
+  profilePhoto String?  @map("profile_photo")
+  role         UserRole @default(USER)
+  isVerified   Boolean  @default(false) @map("is_verified")
+  pushTokens   String[] @default([]) @map("push_tokens")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pointsWallets      PointsWallet[]
+  pointsTransactions PointsTransaction[]
+  foodiePoints       FoodiePoints?
+  orders             Order[]
+  socialPosts        SocialPost[]
+  comments           Comment[]
+  likes              Like[]
+  challengeParticipants ChallengeParticipant[]
+  eventRegistrations EventRegistration[]
+  donations          Donation[]
+  interactions       UserInteraction[]
+  notInterested      NotInterested[]
+  savedRestaurants   SavedRestaurant[]
+  followers          Follow[]             @relation("following")
+  following          Follow[]             @relation("follower")
+  achievements       Achievement[]
+  redemptions        Redemption[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  RESTAURANT_OWNER
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ==================== RESTAURANT ====================
+
+model Restaurant {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  address         String
+  city            String
+  state           String
+  zipCode         String   @map("zip_code")
+  country         String   @default("USA")
+  latitude        Float?
+  longitude       Float?
+  phone           String?
+  email           String?
+  website         String?
+  imageUrl        String?  @map("image_url")
+  cuisineTypes    String[] @map("cuisine_types")
+  priceRange      Int      @default(2) @map("price_range") // 1-4 ($-$$$$)
+  locationCount   Int      @default(1) @map("location_count")
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0) @map("review_count")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  // Loyalty Program Configuration
+  loyaltyProgramEnabled Boolean @default(false) @map("loyalty_program_enabled")
+  pointsPerDollar       Int     @default(10) @map("points_per_dollar")
+  loyaltyApiProvider    String? @map("loyalty_api_provider")
+  loyaltyOauthConfig    Json?   @map("loyalty_oauth_config")
+  qrSecret              String? @map("qr_secret") // HMAC secret for QR code validation
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pointsWallets      PointsWallet[]
+  pointsTransactions PointsTransaction[]
+  orders             Order[]
+  menuItems          MenuItem[]
+  socialPosts        SocialPost[]
+  events             Event[]
+  challenges         Challenge[]
+  interactions       UserInteraction[]
+  notInterested      NotInterested[]
+  savedBy            SavedRestaurant[]
+
+  @@index([city, state])
+  @@index([cuisineTypes])
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String   @id @default(cuid())
+  restaurantId String   @map("restaurant_id")
+  name         String
+  description  String?
+  price        Float
+  category     String
+  imageUrl     String?  @map("image_url")
+  dietaryTags  String[] @map("dietary_tags") // vegan, vegetarian, gluten-free, etc.
+  isAvailable  Boolean  @default(true) @map("is_available")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([restaurantId])
+  @@index([category])
+  @@map("menu_items")
+}
+
+// ==================== POINTS & WALLET ====================
+
+model PointsWallet {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  restaurantId   String    @map("restaurant_id")
+  balance        Int       @default(0)
+  lastSyncedAt   DateTime? @map("last_synced_at")
+  expirationDate DateTime? @map("expiration_date")
+  accountNumber  String?   @map("account_number") // External loyalty account
+  isConnected    Boolean   @default(false) @map("is_connected")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@index([userId])
+  @@index([restaurantId])
+  @@map("points_wallets")
+}
+
+model PointsTransaction {
+  id           String              @id @default(cuid())
+  userId       String              @map("user_id")
+  restaurantId String              @map("restaurant_id")
+  amount       Int                 // Positive for earn, negative for redeem
+  type         PointsTransactionType
+  source       String              // "receipt_scan", "qr_code", "order", "gift", "challenge", etc.
+  orderId      String?             @map("order_id")
+  metadata     Json?               // Additional info (receipt photo URL, etc.)
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([createdAt])
+  @@map("points_transactions")
+}
+
+enum PointsTransactionType {
+  EARN
+  REDEEM
+  EXPIRE
+  GIFT_SENT
+  GIFT_RECEIVED
+  BONUS
+  ADJUSTMENT
+}
+
+model FoodiePoints {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  balance       Int      @default(0)
+  totalEarned   Int      @default(0) @map("total_earned")
+  totalRedeemed Int      @default(0) @map("total_redeemed")
+  lastActivity  DateTime @default(now()) @map("last_activity")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("foodie_points")
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  restaurantId    String        @map("restaurant_id")
+  status          OrderStatus   @default(PENDING)
+  fulfillmentType FulfillmentType @default(PICKUP) @map("fulfillment_type")
+  subtotal        Float
+  tax             Float
+  deliveryFee     Float         @default(0) @map("delivery_fee")
+  serviceFee      Float         @default(0) @map("service_fee")
+  tip             Float         @default(0)
+  total           Float
+  pointsUsed      Int           @default(0) @map("points_used")
+  pointsEarned    Int           @default(0) @map("points_earned")
+  deliveryAddress Json?         @map("delivery_address")
+  specialInstructions String?   @map("special_instructions")
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+  estimatedReadyTime DateTime?  @map("estimated_ready_time")
+  completedAt     DateTime?     @map("completed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      OrderItem[]
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String @map("order_id")
+  menuItemId  String @map("menu_item_id")
+  quantity    Int
+  unitPrice   Float  @map("unit_price")
+  totalPrice  Float  @map("total_price")
+  customizations Json?
+  specialInstructions String? @map("special_instructions")
+
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum FulfillmentType {
+  PICKUP
+  DELIVERY
+  DINE_IN
+}
+
+// ==================== SOCIAL ====================
+
+model SocialPost {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  restaurantId String?  @map("restaurant_id")
+  content      String
+  mediaUrls    String[] @map("media_urls")
+  rating       Int?     // 1-5 stars
+  dishTags     String[] @map("dish_tags")
+  privacy      PostPrivacy @default(PUBLIC)
+  earnings     Float    @default(0) // Creator monetization
+  viewCount    Int      @default(0) @map("view_count")
+  isSponsored  Boolean  @default(false) @map("is_sponsored")
+  isFlagged    Boolean  @default(false) @map("is_flagged")
+  flagReason   String?  @map("flag_reason")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  comments   Comment[]
+  likes      Like[]
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([createdAt])
+  @@map("social_posts")
+}
+
+enum PostPrivacy {
+  PUBLIC
+  FRIENDS_ONLY
+  PRIVATE
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  postId     String   @map("post_id")
+  userId     String   @map("user_id")
+  content    String
+  parentId   String?  @map("parent_id") // For nested replies
+  isFlagged  Boolean  @default(false) @map("is_flagged")
+  flagReason String?  @map("flag_reason")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  post    SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[]  @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("likes")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model UserInteraction {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  restaurantId   String           @map("restaurant_id")
+  interactionType InteractionType @map("interaction_type")
+  weight         Float            @default(1)
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([interactionType])
+  @@unique([userId, restaurantId, interactionType])
+  @@map("user_interactions")
+}
+
+enum InteractionType {
+  SAVED
+  ORDERED
+  RATED
+  NOT_INTERESTED
+}
+
+// ==================== CHALLENGES & GAMIFICATION ====================
+
+model Challenge {
+  id                String        @id @default(cuid())
+  title             String
+  description       String
+  type              ChallengeType
+  requirements      Json          // {count: 5, specificItems: [], deadline: null}
+  rewardFoodiePoints Int          @default(0) @map("reward_foodie_points")
+  rewardGiftCardValue Float?      @map("reward_gift_card_value")
+  sponsorRestaurantId String?     @map("sponsor_restaurant_id")
+  startDate         DateTime      @map("start_date")
+  endDate           DateTime      @map("end_date")
+  isActive          Boolean       @default(true) @map("is_active")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  sponsorRestaurant Restaurant?             @relation(fields: [sponsorRestaurantId], references: [id], onDelete: SetNull)
+  participants      ChallengeParticipant[]
+
+  @@index([type])
+  @@index([endDate])
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id          String   @id @default(cuid())
+  challengeId String   @map("challenge_id")
+  userId      String   @map("user_id")
+  progress    Int      @default(0)
+  isCompleted Boolean  @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([userId])
+  @@map("challenge_participants")
+}
+
+enum ChallengeType {
+  UNIQUE_RESTAURANTS
+  DIVERSE_DISHES
+  CUISINE_EXPLORATION
+  SPONSORED
+  SOCIAL_ENGAGEMENT
+  STREAK
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  badgeType String   @map("badge_type")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeType])
+  @@index([userId])
+  @@map("achievements")
+}
+
+model Redemption {
+  id              String           @id @default(cuid())
+  userId          String           @map("user_id")
+  pointsSpent     Int              @map("points_spent")
+  dollarValue     Float            @map("dollar_value")
+  rewardType      RewardType       @map("reward_type")
+  catalogItemId   String?          @map("catalog_item_id")
+  catalogItemName String?          @map("catalog_item_name")
+  giftCardCode    String?          @map("gift_card_code")
+  giftCardPin     String?          @map("gift_card_pin")
+  expirationDate  DateTime?        @map("expiration_date")
+  deliveryEmail   String?          @map("delivery_email")
+  status          RedemptionStatus @default(PENDING)
+  tangoOrderId    String?          @map("tango_order_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("redemptions")
+}
+
+enum RewardType {
+  GIFT_CARD
+  VISA_PREPAID
+  CASH_BACK
+}
+
+enum RedemptionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ==================== EVENTS ====================
+
+model Event {
+  id            String    @id @default(cuid())
+  restaurantId  String    @map("restaurant_id")
+  title         String
+  description   String
+  type          EventType
+  startTime     DateTime  @map("start_time")
+  endTime       DateTime  @map("end_time")
+  maxAttendees  Int?      @map("max_attendees")
+  pointsReward  Int       @default(0) @map("points_reward")
+  imageUrl      String?   @map("image_url")
+  prizeDetails  String?   @map("prize_details")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  restaurant    Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  @@index([restaurantId])
+  @@index([startTime])
+  @@map("events")
+}
+
+model EventRegistration {
+  id          String    @id @default(cuid())
+  eventId     String    @map("event_id")
+  userId      String    @map("user_id")
+  qrCode      String    @unique @map("qr_code")
+  isCheckedIn Boolean   @default(false) @map("is_checked_in")
+  checkedInAt DateTime? @map("checked_in_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@map("event_registrations")
+}
+
+enum EventType {
+  HAPPY_HOUR
+  POP_UP
+  COMPETITION
+  TASTING
+  LIVE_MUSIC
+  SPECIAL_MENU
+  HOLIDAY
+  OTHER
+}
+
+// ==================== DONATIONS & CHARITY ====================
+
+model Charity {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  logoUrl         String?  @map("logo_url")
+  website         String?
+  mission         String?
+  totalDonations  Float    @default(0) @map("total_donations")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  taxId           String?  @map("tax_id") // 501(c)(3) number
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  donations Donation[]
+
+  @@map("charities")
+}
+
+model Donation {
+  id               String       @id @default(cuid())
+  userId           String       @map("user_id")
+  charityId        String       @map("charity_id")
+  amount           Float        // Dollar amount
+  pointsUsed       Int          @default(0) @map("points_used")
+  donationType     DonationType @map("donation_type")
+  mealsContributed Int          @default(0) @map("meals_contributed")
+  taxReceiptUrl    String?      @map("tax_receipt_url")
+  stripePaymentId  String?      @map("stripe_payment_id")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charity Charity @relation(fields: [charityId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([charityId])
+  @@index([createdAt])
+  @@map("donations")
+}
+
+enum DonationType {
+  CASH
+  POINTS
+  MIXED
+}
+
+// ==================== RECEIPTS ====================
+
+model Receipt {
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  restaurantId   String?       @map("restaurant_id")
+  imageUrl       String?       @map("image_url")
+  imageHash      String        @map("image_hash") // Perceptual hash for duplicate detection
+  extractedData  Json?         @map("extracted_data") // OCR results
+  totalAmount    Float?        @map("total_amount")
+  receiptDate    DateTime?     @map("receipt_date")
+  pointsAwarded  Int           @default(0) @map("points_awarded")
+  status         ReceiptStatus @default(PENDING)
+  errorMessage   String?       @map("error_message")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([imageHash])
+  @@index([createdAt])
+  @@map("receipts")
+}
+
+enum ReceiptStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DUPLICATE
+}
+
+// ==================== QR CODE SCANS ====================
+
+model QRScan {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  restaurantId  String   @map("restaurant_id")
+  transactionId String   @unique @map("transaction_id") // Unique ID from QR code
+  amount        Float    // Transaction amount
+  pointsAwarded Int      @map("points_awarded")
+  scannedAt     DateTime @default(now()) @map("scanned_at")
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([transactionId])
+  @@index([scannedAt])
+  @@map("qr_scans")
+}
+
+model NotInterested {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  restaurantId String   @map("restaurant_id")
+  reason       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@index([userId])
+  @@index([restaurantId])
+  @@map("not_interested")
+}
+
+model SavedRestaurant {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  restaurantId String   @map("restaurant_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@index([userId])
+  @@index([restaurantId])
+  @@map("saved_restaurants")
+}

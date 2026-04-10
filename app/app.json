@@ -1,0 +1,46 @@
+{
+    "expo":  {
+                 "name":  "Foodie",
+                 "slug":  "foodie",
+                 "version":  "1.0.0",
+                 "orientation":  "portrait",
+                 "userInterfaceStyle":  "light",
+                 "splash":  {
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#FFF8E1"
+                            },
+                 "assetBundlePatterns":  [
+                                             "**/*"
+                                         ],
+                 "ios":  {
+                             "supportsTablet":  true,
+                             "bundleIdentifier":  "com.foodie.app",
+                             "googleServicesFile":  "./GoogleService-Info.plist",
+                             "infoPlist":  {
+                                               "UIBackgroundModes":  [
+                                                                         "fetch",
+                                                                         "remote-notification"
+                                                                     ]
+                                           }
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "backgroundColor":  "#FFF8E1"
+                                                  },
+                                 "package":  "com.foodie.app",
+                                 "googleServicesFile":  "./google-services.json",
+                                 "permissions":  [
+                                                     "INTERNET",
+                                                     "ACCESS_NETWORK_STATE",
+                                                     "RECEIVE_BOOT_COMPLETED",
+                                                     "WAKE_LOCK"
+                                                 ]
+                             },
+                 "plugins":  [
+                                 "expo-font"
+                             ],
+                 "scheme":  "foodie"
+             },
+    "name":  "Foodie",
+    "displayName":  "Foodie"
+}

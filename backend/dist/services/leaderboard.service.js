@@ -1,0 +1,101 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getLeaderboardForScope = getLeaderboardForScope;
+const database_service_1 = require("./database.service");
+async function getLeaderboardForScope({ userId, scope, limit, offset, }) {
+    const userIds = await resolveScopeUserIds(userId, scope);
+    const where = {};
+    if (userIds) {
+        where.userId = { in: userIds };
+    }
+    const [foodiePointsRecords, totalCount] = await Promise.all([
+        database_service_1.prisma.foodiePoints.findMany({
+            where,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        profilePhoto: true,
+                        _count: { select: { achievements: true } },
+                    },
+                },
+            },
+            orderBy: { totalEarned: 'desc' },
+            take: limit,
+            skip: offset,
+        }),
+        database_service_1.prisma.foodiePoints.count({ where }),
+    ]);
+    const leaderboard = foodiePointsRecords.map((record, index) => ({
+        rank: offset + index + 1,
+        userId: record.userId,
+        username: record.user.name,
+        profilePhoto: record.user.profilePhoto,
+        totalPoints: record.totalEarned,
+        achievementCount: record.user._count.achievements,
+        isCurrentUser: record.userId === userId,
+    }));
+    const currentUserRank = await resolveCurrentUserRank(userId, where, leaderboard);
+    return { leaderboard, currentUserRank, totalCount };
+}
+async function resolveScopeUserIds(userId, scope) {
+    if (scope === 'friends' && userId) {
+        const following = await database_service_1.prisma.follow.findMany({
+            where: { followerId: userId },
+            select: { followingId: true },
+        });
+        return [userId, ...following.map((f) => f.followingId)];
+    }
+    if (scope === 'local' && userId) {
+        const lastTransaction = await database_service_1.prisma.pointsTransaction.findFirst({
+            where: { userId, type: 'EARN' },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                restaurant: { select: { city: true, state: true } },
+            },
+        });
+        const city = lastTransaction?.restaurant?.city;
+        const state = lastTransaction?.restaurant?.state;
+        if (!city || !state) {
+            return null;
+        }
+        const localUsers = await database_service_1.prisma.pointsTransaction.findMany({
+            where: {
+                type: 'EARN',
+                restaurant: { city, state },
+            },
+            distinct: ['userId'],
+            select: { userId: true },
+        });
+        const localIds = localUsers.map((u) => u.userId);
+        if (!localIds.includes(userId)) {
+            localIds.push(userId);
+        }
+        return localIds;
+    }
+    return null;
+}
+async function resolveCurrentUserRank(userId, where, leaderboard) {
+    if (!userId) {
+        return null;
+    }
+    const currentUserInList = leaderboard.find((entry) => entry.isCurrentUser);
+    if (currentUserInList) {
+        return currentUserInList.rank;
+    }
+    const userFoodiePoints = await database_service_1.prisma.foodiePoints.findUnique({
+        where: { userId },
+    });
+    if (!userFoodiePoints) {
+        return null;
+    }
+    const higherRanked = await database_service_1.prisma.foodiePoints.count({
+        where: {
+            ...where,
+            totalEarned: { gt: userFoodiePoints.totalEarned },
+        },
+    });
+    return higherRanked + 1;
+}
+//# sourceMappingURL=leaderboard.service.js.map
