@@ -17,15 +17,11 @@ Small vendors, caterers, and pop-ups — who normally rely on word of mouth — 
 
 ## Demo
 
-### UI Walkthrough
-
-https://github.com/YOUR_USERNAME/foodie/raw/main/assets/foodie-demo.mp4
-
-> **Note:** To embed this video on GitHub, drag `assets/foodie-demo.mp4` into any GitHub Issue comment box to get a permanent CDN link, then paste that link here in place of the raw path above.
-
-### Pitch Video
+### UI Walkthrough  
+This is a Pitch Video with a UI interface shown in the video. This video was inspired to be more of an advertisement rather than a standard pitch. 
 
 [![Foodie Pitch – Diamond Challenge](https://img.youtube.com/vi/UnZsEsHHn48/maxresdefault.jpg)](https://www.youtube.com/watch?v=UnZsEsHHn48)
+
 
 ---
 
