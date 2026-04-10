@@ -2,7 +2,6 @@
 
 > **One app. All your restaurant points. Your whole food community.**
 
-Foodie was developed as part of the **[Diamond Challenge](https://diamondchallenge.org/competition/)** — a national business competition for high school entrepreneurs. Development was managed using **Task Master AI** to coordinate LLM-assisted workflows, enforce task dependencies, and maintain agile sprint cadence across the build.
 
 ---
 
