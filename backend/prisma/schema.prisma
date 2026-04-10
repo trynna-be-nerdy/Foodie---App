@@ -39,6 +39,7 @@ model User {
   interactions       UserInteraction[]
   notInterested      NotInterested[]
   savedRestaurants   SavedRestaurant[]
+  savedPosts         SavedPost[]
   followers          Follow[]             @relation("following")
   following          Follow[]             @relation("follower")
   achievements       Achievement[]
@@ -304,6 +305,7 @@ model SocialPost {
   restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   comments   Comment[]
   likes      Like[]
+  savedBy    SavedPost[]
 
   @@index([userId])
   @@index([restaurantId])
@@ -686,4 +688,19 @@ model SavedRestaurant {
   @@index([userId])
   @@index([restaurantId])
   @@map("saved_restaurants")
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
+  @@map("saved_posts")
 }
